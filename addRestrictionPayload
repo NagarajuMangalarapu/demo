@@ -1,0 +1,86 @@
+
+def "test3 : else condition for checking memberLoyaltyIds"() {        given:        Header header = Header.builder().crid("0460a971-5851-4c25-87e8-4f2cc32a9616").eventType("MGMMemberAddRestrictionEvent").build();
+
+
+       AddRestrictionPayload addResPayload =  new AddRestrictionPayload();        addResPayload.setResName("Harsha");        addResPayload.setPayloadType("AddRestrictionPayload");        addResPayload.setPlayerId("100059597");        Event event = Event.builder().header(header).payload(addResPayload).build();
+
+
+       Map<String, Object> applicationHeaders = new HashMap();        MessageHeaders mg = new MessageHeaders(applicationHeaders);        Message<Event> requestMessage = MessageBuilder.withPayload(event).copyHeaders(mg).build();
+
+       MemberLoyalty memberLoyalty  = new MemberLoyalty();        Member m1 = new Member();        m1.setId("id");        memberLoyalty.memberId = m1;
+
+
+       
+
+       when:        def responseMessage = restrictionAddPayloadEventTransformer.transform(requestMessage);        println "message1"
+
+
+       then:
+
+       cdcEventCrudClient.getMemberPreferencesByQuery(_, _,_) >> response1();
+
+       1 * cdcEventCrudClient.getEnumsByQuery(_,_) >> response()        1 * cdcEventCrudClient.getLoyaltyidsByQueryParams(_, "memberId", "memberId",_) >> [memberLoyalty]
+
+        responseMessage != null    }
+
+[11:30] Munisricharan Gadam
+[Yesterday 19:35] Munisricharan Gadam
+def "test4 : BadRequestException"() {        given:        Header header = Header.builder().crid("0460a971-5851-4c25-87e8-4f2cc32a9616").eventType("MGMMemberAddRestrictionEvent").build();
+
+
+       AddRestrictionPayload addResPayload =  new AddRestrictionPayload();        addResPayload.setResName("Harsha");        addResPayload.setPayloadType("AddRestrictionPayload");        addResPayload.setPlayerId("100059597");        Event event = Event.builder().header(header).payload(addResPayload).build(); 
+
+
+       Map<String, Object> applicationHeaders = new HashMap();        MessageHeaders mg = new MessageHeaders(applicationHeaders);        Message<Event> requestMessage = MessageBuilder.withPayload(event).copyHeaders(mg).build(); 
+
+       MemberLoyalty memberLoyalty  = new MemberLoyalty();        Member m1 = new Member();        m1.setId("id");        memberLoyalty.memberId = m1; 
+
+       when:        def responseMessage = restrictionAddPayloadEventTransformer.transform(requestMessage); 
+
+       then: 
+
+       cdcEventCrudClient.getMemberPreferencesByQuery(_, _,_) >> { throw new BadRequestException("bad request exception test", 500, 4019) } 
+
+       1 * cdcEventCrudClient.getEnumsByQuery(_,_) >> response()        1 * cdcEventCrudClient.getLoyaltyidsByQueryParams(_, "memberId", "memberId",_) >> [memberLoyalty] 
+
+        responseMessage != null    } 
+
+    def "test5 :Member doesn't have the restriction - Add Restriction to member"() {        given:        Header header = Header.builder().crid("0460a971-5851-4c25-87e8-4f2cc32a9616").eventType("MGMMemberAddRestrictionEvent").build(); 
+
+
+       AddRestrictionPayload addResPayload =  new AddRestrictionPayload();        addResPayload.setResName("Harsha");        addResPayload.setPayloadType("AddRestrictionPayload");        addResPayload.setPlayerId("100059597");        Event event = Event.builder().header(header).payload(addResPayload).build(); 
+
+
+       Map<String, Object> applicationHeaders = new HashMap();        MessageHeaders mg = new MessageHeaders(applicationHeaders);        Message<Event> requestMessage = MessageBuilder.withPayload(event).copyHeaders(mg).build(); 
+
+       MemberLoyalty memberLoyalty  = new MemberLoyalty();        Member m1 = new Member();        m1.setId("id");        memberLoyalty.memberId = m1; 
+
+       when:        def responseMessage = restrictionAddPayloadEventTransformer.transform(requestMessage); 
+
+       then: 
+
+       cdcEventCrudClient.getMemberPreferencesByQuery(_, _,_) >> response2()        addRestrictionEventMapper.toMemberPreference(_) >> new Preference()        cdcEventCrudClient.addMemberPreference(_,_) >> response1() 
+
+       1 * cdcEventCrudClient.getEnumsByQuery(_,_) >> response()        1 * cdcEventCrudClient.getLoyaltyidsByQueryParams(_, "memberId", "memberId",_) >> [memberLoyalty] 
+
+        responseMessage != null    } 
+
+   public Executor commonThreadPoolExecutor() {        ThreadPoolTaskExecutor commonThreadPoolExecutor = new ThreadPoolTaskExecutor();        commonThreadPoolExecutor.setCorePoolSize(4);        commonThreadPoolExecutor.setMaxPoolSize(5);        commonThreadPoolExecutor.initialize();        return commonThreadPoolExecutor;    } 
+
+   def response() {        RcxEnum[] rcxEnum = new RcxEnum[1]        RcxEnum rcxEnum1 = new RcxEnum()        rcxEnum[0] = rcxEnum1        ResponseEntity<RcxEnum[]> rcxEnumObject = new                ResponseEntity(rcxEnum,HttpStatus.OK ); 
+
+
+       return rcxEnumObject    } 
+
+   def response1() {        Preference[] Preference = new Preference[1]        Preference preference1 = new Preference()        Preference[0] = preference1; 
+
+
+       ResponseEntity<RcxEnum[]> PreferenceObject = new                ResponseEntity(Preference,HttpStatus.OK ); 
+
+
+       return PreferenceObject    } 
+
+   def response2() {        Preference[] Preference = new Preference[0];        ResponseEntity<Preference[]> PreferenceObject = new                ResponseEntity(Preference,HttpStatus.OK );        return PreferenceObject    }
+}
+
+
